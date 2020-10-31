@@ -53,7 +53,7 @@ class SocketPoll;
 
 /// Helper to allow us to easily defer the movement of a socket
 /// between polls to clarify thread ownership.
-class SocketDisposition
+class SocketDisposition final
 {
     enum class Type { CONTINUE, CLOSED, MOVE, TRANSFER };
 
@@ -434,7 +434,7 @@ class SimpleSocketHandler : public ProtocolHandlerInterface
 public:
     SimpleSocketHandler() {}
     int sendTextMessage(const char*, const size_t, bool) const override { return 0; }
-    int sendBinaryMessage(const char *, const size_t , bool ) const override     { return 0; }
+    int sendBinaryMessage(const char*, const size_t, bool) const override { return 0; }
     void shutdown(bool, const std::string &) override {}
     void getIOStats(uint64_t &, uint64_t &) override {}
 };
