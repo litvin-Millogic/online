@@ -901,8 +901,10 @@ bool DocumentBroker::load(const std::shared_ptr<ClientSession>& session, const s
         _filename = fileInfo.getFilename();
 
         // Use the local temp file's timestamp.
-        _lastFileModifiedTime = templateSource.empty() ? Util::getFileTimestamp(_storage->getRootFilePath()) :
-                std::chrono::system_clock::time_point();
+        _lastFileModifiedTime
+            = templateSource.empty()
+                  ? FileUtil::Stat(_storage->getRootFilePath()).modifiedTimepoint()
+                  : std::chrono::system_clock::time_point();
 
         bool dontUseCache = false;
 #if MOBILEAPP
@@ -1061,7 +1063,8 @@ bool DocumentBroker::saveToStorageInternal(const std::string& sessionId, bool su
     const std::string uriAnonym = LOOLWSD::anonymizeUrl(uri);
 
     // If the file timestamp hasn't changed, skip saving.
-    const std::chrono::system_clock::time_point newFileModifiedTime = Util::getFileTimestamp(_storage->getRootFilePath());
+    const std::chrono::system_clock::time_point newFileModifiedTime
+        = FileUtil::Stat(_storage->getRootFilePath()).modifiedTimepoint();
     if (!isSaveAs && newFileModifiedTime == _lastFileModifiedTime && !isRename && !force)
     {
         // Nothing to do.

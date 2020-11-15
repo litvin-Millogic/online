@@ -304,16 +304,16 @@ std::atomic<unsigned> LocalStorage::LastLocalStorageId;
 
 std::unique_ptr<LocalStorage::LocalFileInfo> LocalStorage::getLocalFileInfo()
 {
-    const Poco::Path path = Poco::Path(getUri().getPath());
-    LOG_DBG("Getting info for local uri [" << LOOLWSD::anonymizeUrl(getUri().toString()) << "], path [" << LOOLWSD::anonymizeUrl(path.toString()) << "].");
+    const Poco::Path path = getUri().getPath();
+    LOG_DBG("Getting info for local uri [" << LOOLWSD::anonymizeUrl(getUri().toString())
+                                           << "], path [" << LOOLWSD::anonymizeUrl(path.toString())
+                                           << "].");
 
-    std::string str_path = path.toString();
-    const auto& filename = path.getFileName();
-    const Poco::File file = Poco::File(path);
-    std::chrono::system_clock::time_point lastModified = Util::getFileTimestamp(str_path);
-    const size_t size = file.getSize();
+    const FileUtil::Stat stat(path.toString());
+    const std::chrono::system_clock::time_point lastModified = stat.modifiedTimepoint();
+    const std::size_t size = stat.size();
 
-    setFileInfo(FileInfo({filename, "localhost", lastModified, size}));
+    setFileInfo(FileInfo(path.getFileName(), "LocalOwner", lastModified, size));
 
     // Set automatic userid and username
     std::string userNameString;
@@ -353,8 +353,9 @@ std::string LocalStorage::loadStorageFileToLocal(const Authorization& /*auth*/,
     if (!Poco::File(getRootFilePath()).exists() && link(publicFilePath.c_str(), getRootFilePath().c_str()) == -1)
     {
         // Failed
-        LOG_WRN("link(\"" << LOOLWSD::anonymizeUrl(publicFilePath) << "\", \"" << getRootFilePathAnonym() << "\") failed. Will copy. "
-                "Linking error: " << Util::symbolicErrno(errno) << ' ' << strerror(errno));
+        LOG_WRN("link(\"" << LOOLWSD::anonymizeUrl(publicFilePath) << "\", \""
+                          << getRootFilePathAnonym() << "\") failed. Will copy. Linking error: "
+                          << Util::symbolicErrno(errno) << ' ' << strerror(errno));
     }
 
     try
@@ -368,8 +369,7 @@ std::string LocalStorage::loadStorageFileToLocal(const Authorization& /*auth*/,
     }
     catch (const Poco::Exception& exc)
     {
-        LOG_ERR("copyTo(\"" << LOOLWSD::anonymizeUrl(publicFilePath) << "\", \""
-                            << getRootFilePathAnonym() << "\") failed: " << exc.displayText());
+        LOG_ERR("copyTo(\"" << LOOLWSD::anonymizeUrl(publicFilePath) << "\", \"" << getRootFilePathAnonym() << "\") failed: " << exc.displayText());
         throw;
     }
 
@@ -392,6 +392,7 @@ std::string LocalStorage::loadStorageFileToLocal(const Authorization& /*auth*/,
 
     return getRootFilePath();
 #endif
+
 }
 
 StorageBase::SaveResult
@@ -399,18 +400,18 @@ LocalStorage::saveLocalFileToStorage(const Authorization& /*auth*/, const std::s
                                      LockContext& /*lockCtx*/, const std::string& /*saveAsPath*/,
                                      const std::string& /*saveAsFilename*/, bool /*isRename*/)
 {
+    const std::string path = getUri().getPath();
+
     try
     {
         LOG_TRC("Saving local file to local file storage (isCopy: " << _isCopy << ") for " << getRootFilePathAnonym());
         // Copy the file back.
         if (_isCopy && Poco::File(getRootFilePath()).exists())
-            FileUtil::copyFileTo(getRootFilePath(), getUri().getPath());
+            FileUtil::copyFileTo(getRootFilePath(), path);
 
         // update its fileinfo object. This is used later to check if someone else changed the
         // document while we are/were editing it
-        const Poco::Path path = Poco::Path(getUri().getPath());
-        std::string str_path = path.toString();
-        getFileInfo().setModifiedTime(Util::getFileTimestamp(str_path));
+        getFileInfo().setModifiedTime(FileUtil::Stat(path).modifiedTimepoint());
         LOG_TRC("New FileInfo modified time in storage " << getFileInfo().getModifiedTime());
     }
     catch (const Poco::Exception& exc)
@@ -937,7 +938,7 @@ std::string WopiStorage::loadStorageFileToLocal(const Authorization& auth,
 
     // Try the default URL, we either don't have FileUrl, or it failed.
     // WOPI URI to download files ends in '/contents'.
-    // Add it's here to get the payload instead of file info.
+    // Add it here to get the payload instead of file info.
     Poco::URI uriObject(getUri());
     uriObject.setPath(uriObject.getPath() + "/contents");
     auth.authorizeURI(uriObject);
@@ -1172,8 +1173,7 @@ WopiStorage::saveLocalFileToStorage(const Authorization& auth, const std::string
                         std::string decodedUrl;
                         Poco::URI::decode(url, decodedUrl);
                         const std::string obfuscatedFileId = Util::getFilenameFromURL(decodedUrl);
-                        Util::mapAnonymized(obfuscatedFileId,
-                                            obfuscatedFileId); // Identity, to avoid re-anonymizing.
+                        Util::mapAnonymized(obfuscatedFileId, obfuscatedFileId); // Identity, to avoid re-anonymizing.
 
                         const std::string filenameOnly = Util::getFilenameFromURL(filename);
                         Util::mapAnonymized(filenameOnly, obfuscatedFileId);
@@ -1198,11 +1198,9 @@ WopiStorage::saveLocalFileToStorage(const Authorization& auth, const std::string
             Poco::JSON::Object::Ptr object;
             if (JsonUtil::parseJSON(oss.str(), object))
             {
-                const std::string lastModifiedTime
-                    = JsonUtil::getJSONValue<std::string>(object, "LastModifiedTime");
+                const std::string lastModifiedTime = JsonUtil::getJSONValue<std::string>(object, "LastModifiedTime");
                 LOG_TRC(wopiLog << " returns LastModifiedTime [" << lastModifiedTime << "].");
-                getFileInfo().setModifiedTime(
-                    Util::iso8601ToTimestamp(lastModifiedTime, "LastModifiedTime"));
+                getFileInfo().setModifiedTime(Util::iso8601ToTimestamp(lastModifiedTime, "LastModifiedTime"));
 
                 if (isSaveAs || isRename)
                 {
@@ -1238,8 +1236,7 @@ WopiStorage::saveLocalFileToStorage(const Authorization& auth, const std::string
             Poco::JSON::Object::Ptr object;
             if (JsonUtil::parseJSON(oss.str(), object))
             {
-                const unsigned loolStatusCode
-                    = JsonUtil::getJSONValue<unsigned>(object, "LOOLStatusCode");
+                const unsigned loolStatusCode = JsonUtil::getJSONValue<unsigned>(object, "LOOLStatusCode");
                 if (loolStatusCode == static_cast<unsigned>(LOOLStatusCode::DOC_CHANGED))
                 {
                     saveResult.setResult(StorageBase::SaveResult::DOC_CHANGED);
