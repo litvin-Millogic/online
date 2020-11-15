@@ -61,8 +61,6 @@
 #include "Protocol.hpp"
 #include "Util.hpp"
 
-using std::size_t;
-
 namespace Util
 {
     namespace rng
@@ -92,7 +90,7 @@ namespace Util
             return _rng();
         }
 
-        std::vector<char> getBytes(const size_t length)
+        std::vector<char> getBytes(const std::size_t length)
         {
             std::vector<char> v(length);
             _randBuf.readFromDevice(v.data(), v.size());
@@ -100,7 +98,7 @@ namespace Util
         }
 
         /// Generate a string of random characters.
-        std::string getHexString(const size_t length)
+        std::string getHexString(const std::size_t length)
         {
             std::stringstream ss;
             Poco::HexBinaryEncoder hex(ss);
@@ -109,7 +107,7 @@ namespace Util
         }
 
         /// Generate a string of harder random characters.
-        std::string getHardRandomHexString(const size_t length)
+        std::string getHardRandomHexString(const std::size_t length)
         {
             std::stringstream ss;
             Poco::HexBinaryEncoder hex(ss);
@@ -120,7 +118,7 @@ namespace Util
             int len = 0;
             if (fd < 0 ||
                 (len = read(fd, random.data(), length)) < 0 ||
-                size_t(len) < length)
+                std::size_t(len) < length)
             {
                 LOG_ERR("failed to read " << length << " hard random bytes, got " << len << " for hash: " << errno);
             }
@@ -131,7 +129,7 @@ namespace Util
 
         /// Generates a random string in Base64.
         /// Note: May contain '/' characters.
-        std::string getB64String(const size_t length)
+        std::string getB64String(const std::size_t length)
         {
             std::stringstream ss;
             Poco::Base64Encoder b64(ss);
@@ -139,7 +137,7 @@ namespace Util
             return ss.str().substr(0, length);
         }
 
-        std::string getFilename(const size_t length)
+        std::string getFilename(const std::size_t length)
         {
             std::string s = getB64String(length * 2);
             s.erase(std::remove_if(s.begin(), s.end(),
@@ -352,7 +350,7 @@ namespace Util
 
     static const char *startsWith(const char *line, const char *tag)
     {
-        size_t len = std::strlen(tag);
+        std::size_t len = std::strlen(tag);
         if (!strncmp(line, tag, len))
         {
             while (!isdigit(line[len]) && line[len] != '\0')
@@ -390,9 +388,9 @@ namespace Util
         return ss.str();
     }
 
-    size_t getTotalSystemMemoryKb()
+    std::size_t getTotalSystemMemoryKb()
     {
-        size_t totalMemKb = 0;
+        std::size_t totalMemKb = 0;
         FILE* file = fopen("/proc/meminfo", "r");
         if (file != nullptr)
         {
@@ -411,10 +409,10 @@ namespace Util
         return totalMemKb;
     }
 
-    std::pair<size_t, size_t> getPssAndDirtyFromSMaps(FILE* file)
+    std::pair<std::size_t, std::size_t> getPssAndDirtyFromSMaps(FILE* file)
     {
-        size_t numPSSKb = 0;
-        size_t numDirtyKb = 0;
+        std::size_t numPSSKb = 0;
+        std::size_t numDirtyKb = 0;
         if (file)
         {
             rewind(file);
@@ -439,7 +437,7 @@ namespace Util
 
     std::string getMemoryStats(FILE* file)
     {
-        const std::pair<size_t, size_t> pssAndDirtyKb = getPssAndDirtyFromSMaps(file);
+        const std::pair<std::size_t, std::size_t> pssAndDirtyKb = getPssAndDirtyFromSMaps(file);
         std::ostringstream oss;
         oss << "procmemstats: pid=" << getpid()
             << " pss=" << pssAndDirtyKb.first
@@ -448,7 +446,7 @@ namespace Util
         return oss.str();
     }
 
-    size_t getMemoryUsagePSS(const pid_t pid)
+    std::size_t getMemoryUsagePSS(const pid_t pid)
     {
         if (pid > 0)
         {
@@ -456,7 +454,7 @@ namespace Util
             FILE* fp = fopen(cmd.c_str(), "r");
             if (fp != nullptr)
             {
-                const size_t pss = getPssAndDirtyFromSMaps(fp).first;
+                const std::size_t pss = getPssAndDirtyFromSMaps(fp).first;
                 fclose(fp);
                 return pss;
             }
@@ -465,10 +463,10 @@ namespace Util
         return 0;
     }
 
-    size_t getMemoryUsageRSS(const pid_t pid)
+    std::size_t getMemoryUsageRSS(const pid_t pid)
     {
         static const int pageSizeBytes = getpagesize();
-        size_t rss = 0;
+        std::size_t rss = 0;
 
         if (pid > 0)
         {
@@ -480,11 +478,11 @@ namespace Util
         return 0;
     }
 
-    size_t getCpuUsage(const pid_t pid)
+    std::size_t getCpuUsage(const pid_t pid)
     {
         if (pid > 0)
         {
-            size_t totalJiffies = 0;
+            std::size_t totalJiffies = 0;
             totalJiffies += getStatFromPid(pid, 13);
             totalJiffies += getStatFromPid(pid, 14);
             return totalJiffies;
@@ -492,7 +490,7 @@ namespace Util
         return 0;
     }
 
-    size_t getStatFromPid(const pid_t pid, int ind)
+    std::size_t getStatFromPid(const pid_t pid, int ind)
     {
         if (pid > 0)
         {
@@ -505,7 +503,7 @@ namespace Util
                 {
                     const std::string s(line);
                     int index = 1;
-                    size_t pos = s.find(' ');
+                    std::size_t pos = s.find(' ');
                     while (pos != std::string::npos)
                     {
                         if (index == ind)
@@ -537,10 +535,10 @@ namespace Util
 
     std::string replace(std::string result, const std::string& a, const std::string& b)
     {
-        const size_t aSize = a.size();
+        const std::size_t aSize = a.size();
         if (aSize > 0)
         {
-            const size_t bSize = b.size();
+            const std::size_t bSize = b.size();
             std::string::size_type pos = 0;
             while ((pos = result.find(a, pos)) != std::string::npos)
             {
@@ -850,12 +848,12 @@ namespace Util
         return http_time;
     }
 
-    size_t findInVector(const std::vector<char>& tokens, const char *cstring)
+    std::size_t findInVector(const std::vector<char>& tokens, const char *cstring)
     {
         assert(cstring);
-        for (size_t i = 0; i < tokens.size(); ++i)
+        for (std::size_t i = 0; i < tokens.size(); ++i)
         {
-            size_t j;
+            std::size_t j;
             for (j = 0; i + j < tokens.size() && cstring[j] != '\0' && tokens[i + j] == cstring[j]; ++j)
                 ;
             if (cstring[j] == '\0')
@@ -928,7 +926,7 @@ namespace Util
         }
 
         char* end = nullptr;
-        const size_t us = strtoul(trailing + 1, &end, 10); // Skip the '.' and read as integer.
+        const std::size_t us = strtoul(trailing + 1, &end, 10); // Skip the '.' and read as integer.
 
         std::size_t denominator = 1;
         for (const char* i = trailing + 1; i != end; i++)
@@ -968,7 +966,7 @@ namespace Util
 
         for (std::vector<std::string>::iterator it = sVector.begin(); it != sVector.end(); it++)
         {
-            size_t delimiterPosition = 0;
+            std::size_t delimiterPosition = 0;
             delimiterPosition = (*it).find(delimiter, 0);
             if (delimiterPosition != std::string::npos)
             {

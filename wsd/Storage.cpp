@@ -54,8 +54,6 @@
 #include <ios.h>
 #endif
 
-using std::size_t;
-
 bool StorageBase::FilesystemEnabled;
 bool StorageBase::WopiEnabled;
 bool StorageBase::SSLAsScheme = true;
@@ -404,7 +402,9 @@ LocalStorage::saveLocalFileToStorage(const Authorization& /*auth*/, const std::s
 
     try
     {
-        LOG_TRC("Saving local file to local file storage (isCopy: " << _isCopy << ") for " << getRootFilePathAnonym());
+        LOG_TRC("Saving local file to local file storage (isCopy: " << _isCopy << ") for "
+                                                                    << getRootFilePathAnonym());
+
         // Copy the file back.
         if (_isCopy && Poco::File(getRootFilePath()).exists())
             FileUtil::copyFileTo(getRootFilePath(), path);
@@ -661,7 +661,7 @@ std::unique_ptr<WopiStorage::WOPIFileInfo> WopiStorage::getWOPIFileInfo(const Au
         else
             LOG_DBG("WOPI::CheckFileInfo (" << callDuration.count() * 1000. << " ms): " << wopiResponse);
 
-        size_t size = 0;
+        std::size_t size = 0;
         std::string filename, ownerId, lastModifiedTime;
 
         JsonUtil::findJSONValue(object, "Size", size);
@@ -1105,9 +1105,9 @@ WopiStorage::saveLocalFileToStorage(const Authorization& auth, const std::string
                 std::vector<char> buffer(8 * saveAsFilename.size());
 
                 char* in = &input[0];
-                size_t in_left = input.size();
+                std::size_t in_left = input.size();
                 char* out = &buffer[0];
-                size_t out_left = buffer.size();
+                std::size_t out_left = buffer.size();
 
                 if (iconv(cd, &in, &in_left, &out, &out_left) == (size_t) -1)
                     LOG_ERR("Failed to convert '" << saveAsFilename << "' to UTF-7, using '" << suggestedTarget << "'.");
