@@ -246,7 +246,7 @@ protected:
 
 private:
 
-    void shutdown(bool goingAway = false, const std::string& statusMessage = "");
+    void shutdown(bool goingAway = false, const std::string& statusMessage = std::string());
 
     virtual bool _handleInput(const char* buffer, int length) = 0;
 
