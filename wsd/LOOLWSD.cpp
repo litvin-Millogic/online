@@ -1411,9 +1411,11 @@ void LOOLWSD::initialize(Application& self)
 #if !MOBILEAPP
     SavedClipboards.reset(new ClipboardCache());
 
+    LOG_TRC("Initialize FileServerRequestHandler");
     FileServerRequestHandler::initialize();
 #endif
 
+    LOG_TRC("Initialize StorageBase");
     StorageBase::initialize();
 
 #if !MOBILEAPP
