@@ -1233,7 +1233,7 @@ private:
         const std::string& batchMode = session->getBatchMode();
         const std::string& enableMacrosExecution = session->getEnableMacrosExecution();
         const std::string& macroSecurityLevel = session->getMacroSecurityLevel();
-        std::string spellOnline = "";
+        std::string spellOnline;
 
         std::string options;
         if (!lang.empty())
