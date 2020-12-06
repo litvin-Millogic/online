@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+#include <chrono>
 #include <config.h>
 
 #include "Storage.hpp"
@@ -591,7 +592,7 @@ std::unique_ptr<WopiStorage::WOPIFileInfo> WopiStorage::getWOPIFileInfo(const Au
     LOG_DBG("Getting info for wopi uri [" << uriAnonym << "].");
 
     std::string wopiResponse;
-    std::chrono::duration<double> callDuration(0);
+    std::chrono::milliseconds callDurationMs;
     try
     {
         Poco::Net::HTTPRequest request(Poco::Net::HTTPRequest::HTTP_GET,
@@ -618,7 +619,8 @@ std::unique_ptr<WopiStorage::WOPIFileInfo> WopiStorage::getWOPIFileInfo(const Au
 
         Poco::Net::HTTPResponse response;
         std::istream& rs = psession->receiveResponse(response);
-        callDuration = (std::chrono::steady_clock::now() - startTime);
+        callDurationMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - startTime);
 
         Log::StreamLogger logRes = Log::trace();
         if (logRes.enabled())
@@ -656,9 +658,9 @@ std::unique_ptr<WopiStorage::WOPIFileInfo> WopiStorage::getWOPIFileInfo(const Au
     if (JsonUtil::parseJSON(wopiResponse, object))
     {
         if (LOOLWSD::AnonymizeUserData)
-            LOG_DBG("WOPI::CheckFileInfo (" << callDuration.count() * 1000. << " ms): anonymizing...");
+            LOG_DBG("WOPI::CheckFileInfo (" << callDurationMs.count() << " ms): anonymizing...");
         else
-            LOG_DBG("WOPI::CheckFileInfo (" << callDuration.count() * 1000. << " ms): " << wopiResponse);
+            LOG_DBG("WOPI::CheckFileInfo (" << callDurationMs.count() << " ms): " << wopiResponse);
 
         std::size_t size = 0;
         std::string filename, ownerId, lastModifiedTime;
@@ -675,7 +677,7 @@ std::unique_ptr<WopiStorage::WOPIFileInfo> WopiStorage::getWOPIFileInfo(const Au
         if (LOOLWSD::AnonymizeUserData)
             Util::mapAnonymized(Util::getFilenameFromURL(filename), Util::getFilenameFromURL(getUri().toString()));
 
-        auto wopiInfo = std::unique_ptr<WopiStorage::WOPIFileInfo>(new WOPIFileInfo(fileInfo, callDuration, object));
+        auto wopiInfo = Util::make_unique<WopiStorage::WOPIFileInfo>(fileInfo, callDurationMs, object);
         if (wopiInfo->getSupportsLocks())
             lockCtx.initSupportsLocks();
 
@@ -689,9 +691,11 @@ std::unique_ptr<WopiStorage::WOPIFileInfo> WopiStorage::getWOPIFileInfo(const Au
         if (LOOLWSD::AnonymizeUserData)
             wopiResponse = "obfuscated";
 
-        LOG_ERR("WOPI::CheckFileInfo (" << callDuration.count() * 1000. <<
-                " ms) failed or no valid JSON payload returned. Access denied. "
-                "Original response: [" << wopiResponse << "].");
+        LOG_ERR("WOPI::CheckFileInfo ("
+                << callDurationMs.count()
+                << " ms) failed or no valid JSON payload returned. Access denied. "
+                   "Original response: ["
+                << wopiResponse << "].");
 
         throw UnauthorizedRequestException("Access denied. WOPI::CheckFileInfo failed on: " + uriAnonym);
     }
@@ -722,7 +726,7 @@ void WopiStorage::WOPIFileInfo::init()
 }
 
 WopiStorage::WOPIFileInfo::WOPIFileInfo(const FileInfo &fileInfo,
-                                        std::chrono::duration<double> callDuration,
+                                        std::chrono::milliseconds callDurationMs,
                                         Poco::JSON::Object::Ptr &object)
 {
     init();
@@ -781,7 +785,7 @@ WopiStorage::WOPIFileInfo::WOPIFileInfo(const FileInfo &fileInfo,
     else
         object->stringify(wopiResponse);
 
-    LOG_DBG("WOPI::CheckFileInfo (" << callDuration.count() * 1000. << " ms): " << wopiResponse.str());
+    LOG_DBG("WOPI::CheckFileInfo (" << callDurationMs.count() << " ms): " << wopiResponse.str());
 
     JsonUtil::findJSONValue(object, "UserExtraInfo", _userExtraInfo);
     JsonUtil::findJSONValue(object, "WatermarkText", _watermarkText);
@@ -982,7 +986,9 @@ std::string WopiStorage::downloadDocument(const Poco::URI& uriObject, const std:
 
         Poco::Net::HTTPResponse response;
         std::istream& rs = psession->receiveResponse(response);
-        const std::chrono::duration<double> diff = (std::chrono::steady_clock::now() - startTime);
+        const std::chrono::milliseconds diff
+            = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()
+                                                                    - startTime);
         _wopiLoadDuration += diff;
 
         Log::StreamLogger logger = Log::trace();
@@ -1145,7 +1151,8 @@ WopiStorage::uploadLocalFileToStorage(const Authorization& auth, const std::stri
         Poco::Net::HTTPResponse response;
         std::istream& rs = psession->receiveResponse(response);
 
-        _wopiSaveDuration = std::chrono::steady_clock::now() - startTime;
+        _wopiSaveDuration = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - startTime);
 
         WopiUploadDetails details
             = { filePathAnonym, uriAnonym, response.getReason(), response.getStatus(), size,
