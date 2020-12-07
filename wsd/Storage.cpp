@@ -658,9 +658,9 @@ std::unique_ptr<WopiStorage::WOPIFileInfo> WopiStorage::getWOPIFileInfo(const Au
     if (JsonUtil::parseJSON(wopiResponse, object))
     {
         if (LOOLWSD::AnonymizeUserData)
-            LOG_DBG("WOPI::CheckFileInfo (" << callDurationMs.count() << " ms): anonymizing...");
+            LOG_DBG("WOPI::CheckFileInfo (" << callDurationMs << "): anonymizing...");
         else
-            LOG_DBG("WOPI::CheckFileInfo (" << callDurationMs.count() << " ms): " << wopiResponse);
+            LOG_DBG("WOPI::CheckFileInfo (" << callDurationMs << "): " << wopiResponse);
 
         std::size_t size = 0;
         std::string filename, ownerId, lastModifiedTime;
@@ -692,9 +692,8 @@ std::unique_ptr<WopiStorage::WOPIFileInfo> WopiStorage::getWOPIFileInfo(const Au
             wopiResponse = "obfuscated";
 
         LOG_ERR("WOPI::CheckFileInfo ("
-                << callDurationMs.count()
-                << " ms) failed or no valid JSON payload returned. Access denied. "
-                   "Original response: ["
+                << callDurationMs
+                << ") failed or no valid JSON payload returned. Access denied. Original response: ["
                 << wopiResponse << "].");
 
         throw UnauthorizedRequestException("Access denied. WOPI::CheckFileInfo failed on: " + uriAnonym);
@@ -785,7 +784,7 @@ WopiStorage::WOPIFileInfo::WOPIFileInfo(const FileInfo &fileInfo,
     else
         object->stringify(wopiResponse);
 
-    LOG_DBG("WOPI::CheckFileInfo (" << callDurationMs.count() << " ms): " << wopiResponse.str());
+    LOG_DBG("WOPI::CheckFileInfo (" << callDurationMs << "): " << wopiResponse.str());
 
     JsonUtil::findJSONValue(object, "UserExtraInfo", _userExtraInfo);
     JsonUtil::findJSONValue(object, "WatermarkText", _watermarkText);
