@@ -265,7 +265,7 @@ namespace FileUtil
             return real;
         }
 
-        LOG_SYS("Failed to get the realpath of [" << path << "]");
+        LOG_SYS("Failed to get the realpath of [" << path << ']');
         return path;
     }
 
@@ -314,7 +314,7 @@ namespace FileUtil
                           };
         if (utimes(filename.c_str(), timestamps) != 0)
         {
-            LOG_SYS("Failed to update the timestamp of [" << filename << "]");
+            LOG_SYS("Failed to update the timestamp of [" << filename << ']');
             return false;
         }
 
