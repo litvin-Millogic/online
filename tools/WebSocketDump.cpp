@@ -294,7 +294,7 @@ int main (int argc, char **argv)
 
     while (true)
     {
-        DumpSocketPoll.poll(100 * 1000 * 1000);
+        DumpSocketPoll.poll(std::chrono::seconds(100));
     }
 }
 
