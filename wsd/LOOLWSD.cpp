@@ -1779,7 +1779,7 @@ bool LOOLWSD::checkAndRestoreForKit()
     }
     else if (pid < 0)
     {
-        LOG_SYS("Forkit waitpid failed.");
+        LOG_SYS("Forkit waitpid failed");
         if (errno == ECHILD)
         {
             // No child processes.
