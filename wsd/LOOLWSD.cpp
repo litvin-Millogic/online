@@ -4102,7 +4102,7 @@ int LOOLWSD::innerMain()
                                                                     - startStamp);
 
         // Unit test timeout
-        if (timeSinceStartMs > UnitWSD::get().getTimeoutMilliSeconds())
+        if (UnitWSD::isUnitTesting() && timeSinceStartMs > UnitWSD::get().getTimeoutMilliSeconds())
         {
             LOG_ERR("Test exceeded its time limit of " << UnitWSD::get().getTimeoutMilliSeconds()
                                                        << ". It's been running for "
