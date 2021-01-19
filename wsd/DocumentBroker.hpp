@@ -542,6 +542,7 @@ private:
     /// Responsible for managing document saving.
     /// Tracks auto-saveing and its frequency.
     /// Tracks the last save request and response times.
+    /// Tracks the local file's last modified time.
     class SaveManager final
     {
     public:
@@ -607,6 +608,16 @@ private:
                           >= std::chrono::milliseconds(COMMAND_TIMEOUT_MS);
         }
 
+        std::chrono::system_clock::time_point getLastFileModifiedTime() const
+        {
+            return _lastFileModifiedTime;
+        }
+
+        void setLastFileModifiedTime(std::chrono::system_clock::time_point time)
+        {
+            _lastFileModifiedTime = time;
+        }
+
     private:
         /// Helper to get the current time.
         static std::chrono::steady_clock::time_point now()
@@ -623,6 +634,9 @@ private:
 
         /// The last time we received a response for a save request from lokit.
         std::chrono::steady_clock::time_point _lastSaveResponseTime;
+
+        /// The jailed file last-modified time.
+        std::chrono::system_clock::time_point _lastFileModifiedTime;
 
         /// Whether auto-saving is enabled at all or not.
         const bool _isAutosaveEnabled;
@@ -750,9 +764,6 @@ private:
 
     /// The document's last-modified time on storage.
     std::chrono::system_clock::time_point _documentLastModifiedTime;
-
-    /// The jailed file last-modified time.
-    std::chrono::system_clock::time_point _lastFileModifiedTime;
 
     /// All session of this DocBroker by ID.
     SessionMap<ClientSession> _sessions;
