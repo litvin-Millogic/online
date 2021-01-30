@@ -302,7 +302,7 @@ public:
 
     bool isDocumentChangedInStorage() { return _documentChangedInStorage; }
 
-    bool isLastStorageUploadSuccessful() { return _lastStorageUploadSuccessful; }
+    bool isLastStorageUploadSuccessful() { return _storageManager.lastRequestSuccessful(); }
 
     /// Handle the save response from Core and upload to storage as necessary.
     /// Also notifies clients of the result.
@@ -645,6 +645,7 @@ private:
     {
     public:
         StorageManager()
+            : _lastStorageUploadSuccessful(true)
         {
         }
 
@@ -654,9 +655,18 @@ private:
         /// Set the modified time of the document in storage.
         void setModifiedTime(std::chrono::system_clock::time_point time) { _modifiedTime = time; }
 
+        /// Indicates whether the last request was successful or not.
+        bool lastRequestSuccessful() const { return _lastStorageUploadSuccessful; }
+
+        /// Sets the last request's result, either to success or failure.
+        void setLastRequestResult(bool success) { _lastStorageUploadSuccessful = success; }
+
     private:
         /// The document's last-modified time on storage.
         std::chrono::system_clock::time_point _modifiedTime;
+
+        /// Indicates whether the last uploadToStorage operation was successful.
+        bool _lastStorageUploadSuccessful;
     };
 
 protected:
@@ -768,9 +778,6 @@ private:
     /// Set to true when document changed in storage and we are waiting
     /// for user's command to act.
     bool _documentChangedInStorage;
-
-    /// Indicates whether the last uploadToStorage operation was successful.
-    bool _lastStorageUploadSuccessful;
 
     /// Manage saving in Core.
     SaveManager _saveManager;
