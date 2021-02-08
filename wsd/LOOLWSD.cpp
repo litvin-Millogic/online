@@ -1031,8 +1031,8 @@ void LOOLWSD::initialize(Application& self)
     // Set the log-level after complete initialization to force maximum details at startup.
     LogLevel = getConfigValue<std::string>(conf, "logging.level", "trace");
     setenv("LOOL_LOGLEVEL", LogLevel.c_str(), true);
-    std::string SalLog = getConfigValue<std::string>(conf, "logging.lokit_sal_log", "-INFO-WARN");
-    setenv("SAL_LOG", SalLog.c_str(), 0);
+    const std::string salLog = getConfigValue<std::string>(conf, "logging.lokit_sal_log", "-INFO-WARN");
+    setenv("SAL_LOG", salLog.c_str(), 0);
     const bool withColor = getConfigValue<bool>(conf, "logging.color", true) && isatty(fileno(stderr));
     if (withColor)
     {
@@ -1907,7 +1907,7 @@ bool LOOLWSD::createForKit()
 
     StringVector args;
 #ifdef STRACE_LOOLFORKIT
-    // if you want to use this, you need to setcap cap_fowner,cap_mknod,cap_sys_chroot=ep /usr/bin/strace
+    // if you want to use this, you need to setcap cap_fowner,cap_chown,cap_mknod,cap_sys_chroot=ep /usr/bin/strace
     args.push_back("-o");
     args.push_back("strace.log");
     args.push_back("-f");
