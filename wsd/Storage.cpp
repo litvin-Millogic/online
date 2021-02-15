@@ -941,7 +941,7 @@ std::string WopiStorage::downloadStorageFileToLocal(const Authorization& auth,
 
     // Try the default URL, we either don't have FileUrl, or it failed.
     // WOPI URI to download files ends in '/contents'.
-    // Add it here to get the payload instead of file info.
+    // Add it's here to get the payload instead of file info.
     Poco::URI uriObject(getUri());
     uriObject.setPath(uriObject.getPath() + "/contents");
     auth.authorizeURI(uriObject);
@@ -977,31 +977,28 @@ std::string WopiStorage::downloadDocument(const Poco::URI& uriObject, const std:
     const auto startTime = std::chrono::steady_clock::now();
     std::unique_ptr<Poco::Net::HTTPClientSession> psession(getHTTPClientSession(uriObject));
 
-        Poco::Net::HTTPRequest request(Poco::Net::HTTPRequest::HTTP_GET,
-                                       uriObject.getPathAndQuery(),
-                                       Poco::Net::HTTPMessage::HTTP_1_1);
-        initHttpRequest(request, uriObject, auth, cookies);
+    Poco::Net::HTTPRequest request(Poco::Net::HTTPRequest::HTTP_GET, uriObject.getPathAndQuery(),
+                                   Poco::Net::HTTPMessage::HTTP_1_1);
+    initHttpRequest(request, uriObject, auth, cookies);
 
-        psession->sendRequest(request);
+    psession->sendRequest(request);
 
-        Poco::Net::HTTPResponse response;
-        std::istream& rs = psession->receiveResponse(response);
-        const std::chrono::milliseconds diff
-            = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()
-                                                                    - startTime);
-        _wopiLoadDuration += diff;
+    Poco::Net::HTTPResponse response;
+    std::istream& rs = psession->receiveResponse(response);
+    const std::chrono::milliseconds diff = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now() - startTime);
 
-        Log::StreamLogger logger = Log::trace();
-        if (logger.enabled())
+    Log::StreamLogger logger = Log::trace();
+    if (logger.enabled())
+    {
+        logger << "WOPI::GetFile header for URI [" << uriAnonym << "]:\n";
+        for (const auto& pair : response)
         {
-            logger << "WOPI::GetFile header for URI [" << uriAnonym << "]:\n";
-            for (const auto& pair : response)
-            {
-                logger << '\t' << pair.first << ": " << pair.second << " / ";
-            }
-
-            LOG_END(logger, true);
+            logger << '\t' << pair.first << ": " << pair.second << " / ";
         }
+
+        LOG_END(logger, true);
+    }
 
     if (response.getStatus() != Poco::Net::HTTPResponse::HTTP_OK)
     {
@@ -1039,8 +1036,8 @@ std::string WopiStorage::downloadDocument(const Poco::URI& uriObject, const std:
 
 StorageBase::UploadResult
 WopiStorage::uploadLocalFileToStorage(const Authorization& auth, const std::string& cookies,
-                                    LockContext& lockCtx, const std::string& saveAsPath,
-                                    const std::string& saveAsFilename, const bool isRename)
+                                      LockContext& lockCtx, const std::string& saveAsPath,
+                                      const std::string& saveAsFilename, const bool isRename)
 {
     // TODO: Check if this URI has write permission (canWrite = true)
 
