@@ -1548,7 +1548,7 @@ public:
                 {
                     renderCombinedTiles(tokens);
                 }
-                else if (LOOLProtocol::getFirstToken(tokens[0], '-') == "child")
+                else if (Util::startsWith(tokens[0], "child-"))
                 {
                     forwardToChild(tokens[0], input);
                 }
