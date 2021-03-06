@@ -1516,7 +1516,7 @@ public:
         return _tileQueue && !_tileQueue->isEmpty();
     }
 
-    void drainQueue(const std::chrono::steady_clock::time_point &/*now*/)
+    void drainQueue()
     {
         try
         {
@@ -1830,12 +1830,12 @@ public:
     }
 
     // process pending message-queue events.
-    void drainQueue(const std::chrono::steady_clock::time_point &now)
+    void drainQueue()
     {
         SigUtil::checkDumpGlobalState(dump_kit_state);
 
         if (_document)
-            _document->drainQueue(now);
+            _document->drainQueue();
     }
 
     // called from inside poll, inside a wakeup
@@ -1877,7 +1877,7 @@ public:
                     break;
 
                 const auto now = std::chrono::steady_clock::now();
-                drainQueue(now);
+                drainQueue();
 
                 timeoutMicroS = std::chrono::duration_cast<std::chrono::microseconds>(_pollEnd - now).count();
                 ++eventsSignalled;
@@ -1885,7 +1885,7 @@ public:
             while (timeoutMicroS > 0 && !SigUtil::getTerminationFlag() && maxExtraEvents-- > 0);
         }
 
-        drainQueue(std::chrono::steady_clock::now());
+        drainQueue();
 
 #if !MOBILEAPP
         if (_document && _document->purgeSessions() == 0)
