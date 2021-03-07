@@ -109,7 +109,7 @@ public:
 protected:
     virtual void put_impl(const Payload& value)
     {
-        _queue.push_back(value);
+        _queue.emplace_back(value);
     }
 
     bool wait_impl() const
