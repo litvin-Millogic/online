@@ -2349,7 +2349,8 @@ public:
         }
         return hosts.match(address);
     }
-    bool allowConvertTo(const std::string &address, const Poco::Net::HTTPRequest& request)
+
+    static bool allowConvertTo(const std::string& address, const Poco::Net::HTTPRequest& request)
     {
         std::string addressToCheck = address;
         std::string hostToCheck = request.getHost();
