@@ -209,7 +209,9 @@ public:
 
 #endif
 
+// Forward declarations for classes defined in LOOLWSD.cpp.
 class PrisonPoll;
+class LOOLWSDServer;
 
 /// The Server class which is responsible for all
 /// external interactions.
@@ -268,6 +270,8 @@ public:
     /// This thread listens for and accepts prisoner kit processes.
     /// And also cleans up and balances the correct number of children.
     static std::unique_ptr<PrisonPoll> PrisonerPoll;
+
+    static std::unique_ptr<LOOLWSDServer> Server;
 
     static std::unordered_set<std::string> EditFileExtensions;
     static std::unordered_set<std::string> ViewWithCommentsFileExtensions;

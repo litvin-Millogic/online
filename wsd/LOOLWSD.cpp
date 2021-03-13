@@ -1414,6 +1414,8 @@ void LOOLWSD::innerInitialize(Application& self)
 
     LOOLWSD::PrisonerPoll = Util::make_unique<PrisonPoll>();
 
+    LOOLWSD::Server = Util::make_unique<LOOLWSDServer>();
+
     LOG_TRC("Initialize StorageBase");
     StorageBase::initialize();
 
@@ -3931,7 +3933,7 @@ private:
     }
 };
 
-static std::unique_ptr<LOOLWSDServer> srv;
+std::unique_ptr<LOOLWSDServer> LOOLWSD::Server;
 
 #if !MOBILEAPP
 #if ENABLE_DEBUG
@@ -4006,14 +4008,13 @@ int LOOLWSD::innerMain()
 
     ClientRequestDispatcher::InitStaticFileContentCache();
 
-    srv = Util::make_unique<LOOLWSDServer>();
-
     // Allocate our port - passed to prisoners.
-    srv->findClientPort();
+    assert(LOOLWSD::Server && "No LOOLWSD::Server instance exists.");
+    LOOLWSD::Server->findClientPort();
 
     // Start the internal prisoner server and spawn forkit,
     // which in turn forks first child.
-    srv->startPrisoners();
+    LOOLWSD::Server->startPrisoners();
 
 // No need to "have at least one child" beforehand on mobile
 #if !MOBILEAPP
@@ -4065,7 +4066,7 @@ int LOOLWSD::innerMain()
     Util::mapAnonymized("contents", "contents");
 
     // Start the server.
-    srv->start();
+    LOOLWSD::Server->start();
 
     /// The main-poll does next to nothing:
     SocketPoll mainWait("main");
@@ -4122,7 +4123,7 @@ int LOOLWSD::innerMain()
             SigUtil::getShutdownRequestFlag() << ", TerminationFlag: " << SigUtil::getTerminationFlag());
 
     // Wait until documents are saved and sessions closed.
-    srv->stop();
+    LOOLWSD::Server->stop();
 
     // atexit handlers tend to free Admin before Documents
     LOG_INF("Exiting. Cleaning up lingering documents.");
@@ -4198,8 +4199,8 @@ int LOOLWSD::innerMain()
     SigUtil::killChild(ForKitProcId);
 #endif
 
-    srv->stopPrisoners();
-    srv.reset();
+    LOOLWSD::Server->stopPrisoners();
+    LOOLWSD::Server.reset();
 
     LOOLWSD::PrisonerPoll.reset();
 
@@ -4234,7 +4235,7 @@ void LOOLWSD::cleanup()
 {
     try
     {
-        srv.reset();
+        LOOLWSD::Server.reset();
 
         LOOLWSD::PrisonerPoll.reset();
 
@@ -4374,8 +4375,8 @@ void dump_state()
 {
     std::ostringstream oss;
 
-    if (srv)
-        srv->dumpState(oss);
+    if (LOOLWSD::Server)
+        LOOLWSD::Server->dumpState(oss);
 
     const std::string msg = oss.str();
     fprintf(stderr, "%s\n", msg.c_str());
