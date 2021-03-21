@@ -35,6 +35,7 @@
 #include <net/SslSocket.hpp>
 #endif
 #include "WebSocketHandler.hpp"
+#include <net/HttpRequest.hpp>
 
 // Bug in pre C++17 where static constexpr must be defined. Fixed in C++17.
 constexpr std::chrono::microseconds SocketPoll::DefaultPollTimeoutMicroS;
@@ -589,6 +590,12 @@ void StreamSocket::send(Poco::Net::HTTPResponse& response)
     response.write(oss);
 
     send(oss.str());
+}
+
+void StreamSocket::send(const http::Response& response)
+{
+    response.writeData(_outBuffer);
+    flush();
 }
 
 void SocketPoll::dumpState(std::ostream& os)
