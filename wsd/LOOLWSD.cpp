@@ -363,6 +363,7 @@ void cleanupDocBrokers()
 #if !MOBILEAPP && ENABLE_DEBUG
         if (LOOLWSD::SingleKit && DocBrokers.size() == 0)
         {
+            LOG_DBG("Setting ShutdownRequestFlag: No more docs left in single-kit mode.");
             SigUtil::requestShutdown();
         }
 #endif
@@ -1765,7 +1766,7 @@ bool LOOLWSD::checkAndRestoreForKit()
         if (!SigUtil::getShutdownRequestFlag() && !SigUtil::getTerminationFlag() && !createForKit())
         {
             // Should never fail.
-            LOG_FTL("Failed to spawn loolforkit.");
+            LOG_FTL("Setting ShutdownRequestFlag: Failed to spawn loolforkit.");
             SigUtil::requestShutdown();
         }
     }
@@ -1793,7 +1794,7 @@ bool LOOLWSD::checkAndRestoreForKit()
                 // Spawn a new forkit and try to dust it off and resume.
                 if (!SigUtil::getShutdownRequestFlag() && !SigUtil::getTerminationFlag() && !createForKit())
                 {
-                    LOG_FTL("Failed to spawn forkit instance. Shutting down.");
+                    LOG_FTL("Setting ShutdownRequestFlag: Failed to spawn forkit instance.");
                     SigUtil::requestShutdown();
                 }
             }
@@ -1827,7 +1828,7 @@ bool LOOLWSD::checkAndRestoreForKit()
             // Spawn a new forkit and try to dust it off and resume.
             if (!SigUtil::getShutdownRequestFlag() && !SigUtil::getTerminationFlag() && !createForKit())
             {
-                LOG_FTL("Failed to spawn forkit instance. Shutting down.");
+                LOG_FTL("Setting ShutdownRequestFlag: Failed to spawn forkit instance.");
                 SigUtil::requestShutdown();
             }
         }
@@ -4137,8 +4138,8 @@ int LOOLWSD::innerMain()
 #if ENABLE_DEBUG && !MOBILEAPP
         if (careerSpanMs > std::chrono::milliseconds::zero() && timeSinceStartMs > careerSpanMs)
         {
-            LOG_INF(timeSinceStartMs
-                    << " gone, finishing as requested. Setting ShutdownRequestFlag.");
+            LOG_INF("Setting ShutdownRequestFlag: " << timeSinceStartMs << " gone, career of "
+                                                    << careerSpanMs << " expired.");
             SigUtil::requestShutdown();
         }
 #endif
@@ -4158,7 +4159,8 @@ int LOOLWSD::innerMain()
     if (!SigUtil::getShutdownRequestFlag())
     {
         // This shouldn't happen, but it's fail safe to always cleanup properly.
-        LOG_WRN("Exiting WSD without ShutdownRequestFlag. Setting it now.");
+        LOG_WRN("Setting ShutdownRequestFlag: Exiting WSD without ShutdownRequestFlag. Setting it "
+                "now.");
         SigUtil::requestShutdown();
     }
 #endif
